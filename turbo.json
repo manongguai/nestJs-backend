@@ -1,0 +1,46 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDotEnv": [".env"],
+  "pipeline": {
+    "@kirkw/server#start:dev": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "@kirkw/server#start:test": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "@kirkw/server-utils:build": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "@kirkw/server#start:prod": {
+      "dependsOn": ["@kirkw/server#build"],
+      "outputs": ["dist/**"]
+    },
+    "@kirkw/server#build": {
+      "dependsOn": ["@kirkw/server-utils:build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    },
+    "lint": {
+      "dependsOn": []
+    },
+    "server:dev": {
+      "dependsOn": ["@kirkw/server#start:dev"],
+      "persistent": true
+    },
+    "server:test": {
+      "dependsOn": ["@kirkw/server#start:test"],
+      "persistent": true
+    },
+    "server:build": {
+      "dependsOn": ["@kirkw/server#build"]
+    },
+    "server:start": {
+      "dependsOn": ["@kirkw/server#start:prod"]
+    }
+  }
+}

@@ -6,7 +6,7 @@ import { ReqListQuery } from '../../../common/utils/req-list-query'
 
 export class FindUserListDto extends ReqListQuery {
   @ApiProperty({ description: '账号模糊搜索', required: false })
-  account?: string
+  username?: string
 
   @ApiProperty({ description: '按账号状态查询用户', enum: $enum(StatusValue).getValues(), required: false })
   status?: StatusValue

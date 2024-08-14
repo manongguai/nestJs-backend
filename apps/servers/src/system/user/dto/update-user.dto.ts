@@ -18,11 +18,11 @@ export class  UpdateUserDto {
   readonly status?: StatusValue
 
   @ApiProperty({ description: '手机号', required: false })
-  @IsString({ message: 'phoneNum 类型错误，正确类型 string' })
+  @IsString({ message: 'phone 类型错误，正确类型 string' })
   @IsMobilePhone('zh-CN', { strictMode: false }, { message: '请输入正确的手机号' })
   // @IsPhoneNumber('CH', { message: '请输入正确的手机号' })
   @IsOptional()
-  readonly phoneNum?: string
+  readonly phone?: string
 
   @ApiProperty({ description: '邮箱', required: false })
   @IsString({ message: 'email 类型错误，正确类型 string' })

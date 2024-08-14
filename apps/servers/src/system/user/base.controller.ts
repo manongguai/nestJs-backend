@@ -30,7 +30,7 @@ export class BaseController {
   @ApiResult(CreateTokenDto)
   @AllowAnon()
   async login(@Body() dto: LoginUser): Promise<ResultData> {
-    return await this.userService.login(dto.account, dto.password)
+    return await this.userService.login(dto.username, dto.password)
   }
 
   @Post('/update/token')

@@ -3,11 +3,11 @@ import { IsEmail, IsMobilePhone, IsNotEmpty, IsOptional, IsString, MaxLength, Mi
 
 export class CreateUserDto {
   @ApiProperty({ description: '用户账号' })
-  @IsString({ message: 'account 类型错误，正确类型 string' })
-  @IsNotEmpty({ message: 'account 不能为空' })
+  @IsString({ message: 'username 类型错误，正确类型 string' })
+  @IsNotEmpty({ message: 'username 不能为空' })
   @MinLength(5, { message: '账号至少5个字符' })
   @MaxLength(20, { message: '账号最多20个字符' })
-  readonly account: string
+  readonly username: string
 
   @ApiProperty({ description: '密码' })
   @IsString({ message: 'password 类型错误，正确类型 string' })
@@ -15,11 +15,11 @@ export class CreateUserDto {
   password: string
 
   @ApiProperty({ description: '手机号', required: false })
-  @IsString({ message: 'phoneNum 类型错误，正确类型 string' })
+  @IsString({ message: 'phone 类型错误，正确类型 string' })
   @IsMobilePhone('zh-CN', { strictMode: false }, { message: '请输入正确的手机号' })
   @IsOptional()
   // @IsPhoneNumber('CH', { message: '请输入正确的手机号' })
-  readonly phoneNum?: string
+  readonly phone?: string
 
   @ApiProperty({ description: '邮箱', required: false })
   @IsString({ message: 'email 类型错误，正确类型 string' })

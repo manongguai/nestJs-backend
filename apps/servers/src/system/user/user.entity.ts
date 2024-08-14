@@ -21,11 +21,11 @@ export class UserEntity {
 
   @ApiProperty({ type: String, description: '用户登录账号' })
   @Column({ type: 'varchar', length: 32, comment: '用户登录账号' })
-  public account: string
+  public username: string
 
   @ApiProperty({ type: String, description: '手机号' })
-  @Column({ type: 'varchar', name: 'phone_num', default: '', length: 20, comment: '用户手机号码' })
-  public phoneNum: string
+  @Column({ type: 'varchar', name: 'phone', default: '', length: 20, comment: '用户手机号码' })
+  public phone: string
 
   @ApiProperty({ type: String, description: '邮箱' })
   @Column({ type: 'varchar', comment: '邮箱地址', default: '' })

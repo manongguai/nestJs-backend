@@ -63,8 +63,8 @@ export class UserService {
     return user
   }
 
-  async findOneByAccount(account: string): Promise<UserEntity> {
-    return await this.userRepo.findOne({ where: { account } })
+  async findOneByAccount(username: string): Promise<UserEntity> {
+    return await this.userRepo.findOne({ where: { username } })
   }
 
   /** 创建用户 */
@@ -72,9 +72,9 @@ export class UserService {
     if (dto.password !== dto.confirmPassword)
       return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, '两次输入密码不一致，请重试')
     // 防止重复创建 start
-    if (await this.findOneByAccount(dto.account))
+    if (await this.findOneByAccount(dto.username))
       return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '帐号已存在，请调整后重新注册！')
-    if (await this.userRepo.findOne({ where: { phoneNum: dto.phoneNum } }))
+    if (await this.userRepo.findOne({ where: { phone: dto.phone } }))
       return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '当前手机号已存在，请调整后重新注册')
     if (await this.userRepo.findOne({ where: { email: dto.email } }))
       return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '当前邮箱已存在，请调整后重新注册')
@@ -97,7 +97,7 @@ export class UserService {
     let user = null
     if (validPhone(account)) {
       // 手机登录
-      user = await this.userRepo.findOne({ where: { phoneNum: account } })
+      user = await this.userRepo.findOne({ where: { phone: account } })
     } else if (validEmail(account)) {
       // 邮箱
       user = await this.userRepo.findOne({ where: { email: account } })
@@ -140,13 +140,13 @@ export class UserService {
     for (let i = 1, len = workSheet[0].data.length; i < len; i++) {
       const dataArr = workSheet[0].data[i] as Array<any>
       if (dataArr.length === 0) break
-      const [account, phone, email, avatar] = dataArr
-      userArr.push({ account, phoneNum: phone, email, avatar })
-      if (account && !accountMap.has(account)) {
-        accountMap.set(account, [])
-      } else if (account) {
+      const [username, phone, email, avatar] = dataArr
+      userArr.push({ username, phone, email, avatar })
+      if (username && !accountMap.has(username)) {
+        accountMap.set(username, [])
+      } else if (username) {
         // 有重复的
-        accountMap.get(account).push(i + 1)
+        accountMap.get(username).push(i + 1)
       } else {
         return ResultData.fail(AppHttpCode.DATA_IS_EMPTY, '上传文件帐号有空数据，请检查后再导入')
       }
@@ -181,36 +181,36 @@ export class UserService {
     }
     if (accountErrArr.length > 0 || phoneErrArr.length > 0 || emailErrArr.length > 0) {
       return ResultData.fail(AppHttpCode.PARAM_INVALID, '导入 excel 内部有数据重复或数据有误，请修改调整后上传导入', {
-        account: accountErrArr,
+        username: accountErrArr,
         phone: phoneErrArr,
         email: emailErrArr,
       })
     }
     // 若 excel 内部无重复，则需要判断 excel 中数据 是否与 数据库的数据重复
     const existingAccount = await this.userRepo.find({
-      select: ['account'],
-      where: { account: In(userArr.map((v) => v.account)) },
+      select: ['username'],
+      where: { username: In(userArr.map((v) => v.username)) },
     })
     if (existingAccount.length > 0) {
       existingAccount.forEach((v) => {
         // userArr 中的数据 下标 换算成 excel 中的 行号 + 2
-        accountErrArr.push({ key: v.account, val: [userArr.findIndex((m) => m.account === v.account) + 2] })
+        accountErrArr.push({ key: v.username, val: [userArr.findIndex((m) => m.username === v.username) + 2] })
       })
     }
     // 手机号、邮箱非必填，所以查询存在重复的 过滤掉 空数据
     const existingPhone = await this.userRepo.find({
-      select: ['phoneNum'],
-      where: { account: In(userArr.map((v) => v.phoneNum).filter((v) => !!v)) },
+      select: ['phone'],
+      where: { username: In(userArr.map((v) => v.phone).filter((v) => !!v)) },
     })
     if (existingPhone.length > 0) {
       existingPhone.forEach((v) => {
         // userArr 中的数据 下标 换算成 excel 中的 行号 + 2
-        phoneErrArr.push({ key: v.phoneNum, val: [userArr.findIndex((m) => m.phoneNum === v.phoneNum) + 2] })
+        phoneErrArr.push({ key: v.phone, val: [userArr.findIndex((m) => m.phone === v.phone) + 2] })
       })
     }
     const existingEmail = await this.userRepo.find({
       select: ['email'],
-      where: { account: In(userArr.map((v) => v.email).filter((v) => !!v)) },
+      where: { username: In(userArr.map((v) => v.email).filter((v) => !!v)) },
     })
     if (existingEmail.length > 0) {
       existingEmail.forEach((v) => {
@@ -220,7 +220,7 @@ export class UserService {
     }
     if (accountErrArr.length > 0 || phoneErrArr.length > 0 || emailErrArr.length > 0) {
       return ResultData.fail(AppHttpCode.PARAM_INVALID, '导入 excel 系统中已有重复项，请修改调整后上传导入', {
-        account: accountErrArr,
+        username: accountErrArr,
         phone: phoneErrArr,
         email: emailErrArr,
       })
@@ -332,14 +332,14 @@ export class UserService {
 
   /** 查询用户列表, 需要重新写， 包含查询 角色、部门等 */
   async findList(dto: FindUserListDto): Promise<ResultData> {
-    const { page, size, account, status, roleId, hasCurrRole = 0, deptId, hasCurrDept = 0 } = dto
+    const { page, size, username, status, roleId, hasCurrRole = 0, deptId, hasCurrDept = 0 } = dto
     if (roleId) {
       const result = await this.userRoleService.findUserByRoleId(roleId, page, size, !!Number(hasCurrRole))
       return result
     }
     const where = {
       ...(status ? { status } : null),
-      ...(account ? { account: Like(`%${account}%`) } : null),
+      ...(username ? { username: Like(`%${username}%`) } : null),
     }
     const users = await this.userRepo.findAndCount({
       where,

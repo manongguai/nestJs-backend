@@ -49,7 +49,7 @@ export class OssService {
   async create(
     files: Express.Multer.File[],
     business: string,
-    user: { id: string; account: string },
+    user: { id: string; username: string },
   ): Promise<ResultData> {
     const ossList = files.map((file) => {
       // 重新命名文件， uuid, 根据 mimeType 决定 文件扩展名， 直接拿后缀名不可靠
@@ -72,7 +72,7 @@ export class OssService {
         location: fileLocation,
         business: business || '',
         userId: user.id,
-        userAccount: user.account,
+        userAccount: user.username,
       }
       return plainToInstance(OssEntity, ossFile)
     })

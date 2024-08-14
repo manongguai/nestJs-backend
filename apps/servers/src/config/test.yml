@@ -19,7 +19,7 @@ db:
     host: 'localhost'
     username: 'root'
     password: 'root'
-    database: 'kapok'
+    database: 'nest_rbac'
     port: 3306
     charset: 'utf8mb4'
     logger: 'advanced-console'

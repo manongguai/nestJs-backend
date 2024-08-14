@@ -46,8 +46,8 @@ async function bootstrap() {
   app.use(helmet({ crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, crossOriginResourcePolicy: false }))
 
   const swaggerOptions = new DocumentBuilder()
-    .setTitle('Nest-Admin App')
-    .setDescription('Nest-Admin App 接口文档')
+    .setTitle('NestJs-RBAC App')
+    .setDescription('NestJs-RBAC App 接口文档')
     .setVersion('2.0.0')
     .addBearerAuth()
     .build()
@@ -58,7 +58,7 @@ async function bootstrap() {
     swaggerOptions: {
       persistAuthorization: true,
     },
-    customSiteTitle: 'Nest-Admin API Docs',
+    customSiteTitle: 'NestJs-RBAC API Docs',
   })
 
   // 获取真实 ip

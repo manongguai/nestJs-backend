@@ -35,13 +35,13 @@ pnpm install
 
 - **启动：**
 
-```MySql``` 数据库文件在 ```nest-admin/db/nest_rbac.sql``` ，可以通过 ```MySQL WorkBench``` 或 ```Navicat``` 等工具软件导入。
+```MySql``` 数据库文件在 ```nestJs-rbac/db/nest_rbac.sql``` ，可以通过 ```MySQL WorkBench``` 或 ```Navicat``` 等工具软件导入。
 
 导入的账号：
 
 |   账号  |  密码   |    权限    |
 | :-----: | :-----: | :--------: |
-|  admin  |  admin  | 超级管理员 |
+|  admin  |  Q123456  | 超级管理员 |
 |  kirk   | Q123456 | 测试用户   |
 
 > 批量导入的用户默认密码： Q123456 ， 可在 ```apps/servers/src/config``` 中配置 初始密码

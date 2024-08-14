@@ -13,7 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { CreateTokenDto } from './dto/create-token.dto'
 
 @ApiTags('登录注册')
-@Controller()
+@Controller("/auth")
 export class BaseController {
   constructor(private readonly userService: UserService) {}
 

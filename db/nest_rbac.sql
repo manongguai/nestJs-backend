@@ -214,8 +214,8 @@ CREATE TABLE `sys_user` (
   `type` tinyint NOT NULL DEFAULT '1' COMMENT '帐号类型：0-超管， 1-普通用户',
   `create_date` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '创建时间',
   `update_date` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) COMMENT '更新时间',
-  `username` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户登录账号',
-  `phone` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '用户手机号码',
+  `username` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户登录账号',
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '用户手机号码',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -225,7 +225,7 @@ CREATE TABLE `sys_user` (
 --
 
 /*!40000 ALTER TABLE `sys_user` DISABLE KEYS */;
-INSERT INTO `sys_user` VALUES (1,'$2a$10$JChCYKwJYbVV4ANalu2tBenViaF3fuQGAJ1NSBOtR8HJNCV7H710i','$2a$10$JChCYKwJYbVV4ANalu2tBe','123@qq.com',1,'http://localhost:8081/static/67f57d2058984103afc54d164aff5648.jpeg',0,'2021-11-15 08:09:23.000000','2024-08-14 02:15:52.761808','admin',''),(2,'$2a$10$NSrq5H2chKrcMy/AeiHqK.C1ER40JmLWCh/OIpXkL/nZ4lHN/epse','$2a$10$NSrq5H2chKrcMy/AeiHqK.','12345@qq.com',1,'http://localhost:8081/static/67f57d2058984103afc54d164aff5648.jpeg',1,'2021-12-30 07:25:47.000000','2024-08-14 02:15:52.767852','kirk','');
+INSERT INTO `sys_user` VALUES (1,'$2a$10$NSrq5H2chKrcMy/AeiHqK.C1ER40JmLWCh/OIpXkL/nZ4lHN/epse','$2a$10$JChCYKwJYbVV4ANalu2tBe','123@qq.com',1,'http://localhost:8081/static/67f57d2058984103afc54d164aff5648.jpeg',0,'2021-11-15 08:09:23.000000','2024-08-14 07:52:22.043989','admin',''),(2,'$2a$10$NSrq5H2chKrcMy/AeiHqK.C1ER40JmLWCh/OIpXkL/nZ4lHN/epse','$2a$10$NSrq5H2chKrcMy/AeiHqK.','12345@qq.com',1,'http://localhost:8081/static/67f57d2058984103afc54d164aff5648.jpeg',1,'2021-12-30 07:25:47.000000','2024-08-14 02:15:52.767852','kirk','');
 /*!40000 ALTER TABLE `sys_user` ENABLE KEYS */;
 
 --
@@ -309,4 +309,4 @@ INSERT INTO `sys_user_role` VALUES (33,2,2),(34,2,1);
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-08-14 10:17:08
+-- Dump completed on 2024-08-14 15:52:46

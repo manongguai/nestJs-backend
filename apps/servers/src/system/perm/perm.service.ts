@@ -110,7 +110,7 @@ export class PermService {
     } else {
       menusResult = await this.dataSource
         .createQueryBuilder()
-        .select(['m.id', 'm.parent_id', 'm.name', 'm.type', 'm.code', 'm.order_num'])
+        .select(['m.id', 'm.parent_id', 'm.name', 'm.type', 'm.code', 'm.path', 'm.order_num'])
         .from('sys_user_role', 'ur')
         .leftJoin('sys_role_menu', 'rm', 'ur.role_id = rm.role_id')
         .leftJoin('sys_menu', 'm', 'rm.menu_id = m.id')

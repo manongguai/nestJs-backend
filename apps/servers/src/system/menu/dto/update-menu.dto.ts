@@ -29,6 +29,11 @@ export class UpdateMenuDto {
   @IsOptional()
   readonly code?: string
 
+  @ApiProperty({ description: '跳转路径', required: false })
+  @IsString({ message: 'path 类型错误' })
+  @IsOptional()
+  readonly path?: string
+
   @ApiProperty({ description: '菜单类型 1-菜单/目录 2-tabs 3-按钮', enum: $enum(MenuType).getValues(), required: false })
   @IsNumber({}, { message: 'type 类型错误' })
   @IsIn($enum(MenuType).getValues(), { message: 'type 的值只能是 1/2/3，且分别表示菜单/tabs/按钮' })

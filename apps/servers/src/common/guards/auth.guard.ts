@@ -24,8 +24,8 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     // const res = ctx.switchToHttp().getResponse()
     const accessToken = req.get("Authorization");
     if (!accessToken) throw new ForbiddenException("请先登录");
-    const atUserId = this.userService.verifyToken(accessToken);
-    if (!atUserId) throw new UnauthorizedException("当前登录已过期，请重新登录");
+    const isPass = this.userService.verifyToken(accessToken, req.originalUrl);
+    if (!isPass) throw new UnauthorizedException("当前登录已过期，请重新登录");
     return this.activate(ctx);
   }
 

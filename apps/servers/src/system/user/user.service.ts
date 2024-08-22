@@ -351,8 +351,16 @@ export class UserService {
    * @returns
    */
   genToken(payload: { id: string }): CreateTokenDto {
-    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: this.config.get("jwt.refreshExpiresIn") });
+    const accessToken = `Bearer ${this.jwtService.sign(payload, {
+      expiresIn: "10s"
+    })}`;
+    const refreshToken = this.jwtService.sign(
+      {
+        ...payload,
+        isRefresh: true
+      },
+      { expiresIn: this.config.get("jwt.refreshExpiresIn") }
+    );
     return { accessToken, refreshToken };
   }
 
@@ -364,13 +372,21 @@ export class UserService {
   }
 
   /** 校验 token */
-  verifyToken(token: string): string {
+  verifyToken(token: string, url): boolean {
     try {
       if (!token) return null;
-      const id = this.jwtService.verify(token.replace("Bearer ", ""));
-      return id;
+      const user = this.jwtService.verify(token.replace("Bearer ", ""));
+      const isRefreshTokenUrl = url === this.config.get<string>("app.prefix") + "/auth/update/token";
+
+      if (!isRefreshTokenUrl && user && !user.isRefresh) {
+        return true;
+      }
+      if (isRefreshTokenUrl && user && user.isRefresh) {
+        return true;
+      }
+      return false;
     } catch (error) {
-      return null;
+      return false;
     }
   }
 }

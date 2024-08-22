@@ -4,7 +4,8 @@ module.exports = {
   env: {
     browser: true,
     node: true,
-    es6: true
+    es6: true,
+    jest: true
   },
   parser: "@typescript-eslint/parser",
   // 继承某些已有的规则

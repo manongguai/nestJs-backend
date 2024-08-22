@@ -1,9 +1,9 @@
-import { PassportStrategy } from '@nestjs/passport'
-import { Strategy, ExtractJwt } from 'passport-jwt'
-import { ConfigService } from '@nestjs/config'
-import { UnauthorizedException, Injectable } from '@nestjs/common'
+import { PassportStrategy } from "@nestjs/passport";
+import { Strategy, ExtractJwt } from "passport-jwt";
+import { ConfigService } from "@nestjs/config";
+import { UnauthorizedException, Injectable } from "@nestjs/common";
 
-import { AuthService } from './auth.service'
+import { AuthService } from "./auth.service";
 
 @Injectable()
 export class AuthStrategy extends PassportStrategy(Strategy) {
@@ -11,11 +11,14 @@ export class AuthStrategy extends PassportStrategy(Strategy) {
    * 这里的构造函数向父类传递了授权时必要的参数，在实例化时，父类会得知授权时，客户端的请求必须使用 Authorization 作为请求头，
    * 而这个请求头的内容前缀也必须为 Bearer，在解码授权令牌时，使用秘钥 secretOrKey: 'secretKey' 来将授权令牌解码为创建令牌时的 payload。
    */
-  constructor(private readonly authService: AuthService, private readonly config: ConfigService) {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: config.get('jwt.secretkey'),
-    })
+      secretOrKey: config.get("jwt.secretkey")
+    });
   }
 
   /**
@@ -25,9 +28,9 @@ export class AuthStrategy extends PassportStrategy(Strategy) {
    * 当用户存在时，会将 user 对象添加到 req 中，在之后的 req 对象中，可以使用 req.user 获取当前登录用户。
    */
   async validate(payload: { id: string }) {
-    const user = await this.authService.validateUser(payload)
+    const user = await this.authService.validateUser(payload);
     // 如果用用户信息，代表 token 没有过期，没有则 token 已失效
-    if (!user) throw new UnauthorizedException()
-    return user
+    if (!user) throw new UnauthorizedException();
+    return user;
   }
 }

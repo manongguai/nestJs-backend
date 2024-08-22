@@ -1,34 +1,34 @@
-import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm'
-import { Like, Repository, In, EntityManager } from 'typeorm'
-import { instanceToPlain, plainToInstance } from 'class-transformer'
-import { genSalt, hash, compare, genSaltSync, hashSync } from 'bcryptjs'
-import { JwtService } from '@nestjs/jwt'
-import xlsx from 'node-xlsx'
-import ms from 'ms'
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
+import { Like, Repository, In, EntityManager } from "typeorm";
+import { instanceToPlain, plainToInstance } from "class-transformer";
+import { genSalt, hash, compare, genSaltSync, hashSync } from "bcryptjs";
+import { JwtService } from "@nestjs/jwt";
+import xlsx from "node-xlsx";
+import ms from "ms";
 
-import { ResultData } from '../../common/utils/result'
-import { getRedisKey } from '../../common/utils/utils'
-import { RedisKeyPrefix } from '../../common/enums/redis-key-prefix.enum'
-import { AppHttpCode } from '../../common/enums/code.enum'
-import { RedisService } from '../../common/libs/redis/redis.service'
+import { ResultData } from "../../common/utils/result";
+import { getRedisKey } from "../../common/utils/utils";
+import { RedisKeyPrefix } from "../../common/enums/redis-key-prefix.enum";
+import { AppHttpCode } from "../../common/enums/code.enum";
+import { RedisService } from "../../common/libs/redis/redis.service";
 
-import { validPhone, validEmail } from '../../common/utils/validate'
-import { UserType } from '../../common/enums/common.enum'
+import { validPhone, validEmail } from "../../common/utils/validate";
+import { UserType } from "../../common/enums/common.enum";
 
-import { PermService } from '../perm/perm.service'
+import { PermService } from "../perm/perm.service";
 
-import { UserRoleService } from './role/user-role.service'
+import { UserRoleService } from "./role/user-role.service";
 
-import { UserEntity } from './user.entity'
-import { UserRoleEntity } from './role/user-role.entity'
+import { UserEntity } from "./user.entity";
+import { UserRoleEntity } from "./role/user-role.entity";
 
-import { CreateUserDto } from './dto/create-user.dto'
-import { FindUserListDto } from './dto/find-user-list.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
-import { CreateOrUpdateUserRolesDto } from './dto/create-user-roles.dto'
-import { CreateTokenDto } from './dto/create-token.dto'
+import { CreateUserDto } from "./dto/create-user.dto";
+import { FindUserListDto } from "./dto/find-user-list.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { CreateOrUpdateUserRolesDto } from "./dto/create-user-roles.dto";
+import { CreateTokenDto } from "./dto/create-token.dto";
 
 @Injectable()
 export class UserService {
@@ -41,52 +41,48 @@ export class UserService {
     private readonly redisService: RedisService,
     private readonly jwtService: JwtService,
     private readonly userRoleService: UserRoleService,
-    private readonly permService: PermService,
+    private readonly permService: PermService
   ) {}
 
   async findOneById(id: string): Promise<UserEntity> {
-    const redisKey = getRedisKey(RedisKeyPrefix.USER_INFO, id)
-    const result = await this.redisService.hGetAll(redisKey)
+    const redisKey = getRedisKey(RedisKeyPrefix.USER_INFO, id);
+    const result = await this.redisService.hGetAll(redisKey);
     // plainToInstance 去除 password slat
-    let user = plainToInstance(UserEntity, result, { enableImplicitConversion: true })
+    let user = plainToInstance(UserEntity, result, { enableImplicitConversion: true });
     if (!user?.id) {
-      user = await this.userRepo.findOne({ where: { id } })
-      user = plainToInstance(UserEntity, { ...user }, { enableImplicitConversion: true })
-      await this.redisService.hmset(
-        redisKey,
-        instanceToPlain(user),
-        ms(this.config.get<string>('jwt.expiresin')) / 1000,
-      )
+      user = await this.userRepo.findOne({ where: { id } });
+      user = plainToInstance(UserEntity, { ...user }, { enableImplicitConversion: true });
+      await this.redisService.hmset(redisKey, instanceToPlain(user), ms(this.config.get<string>("jwt.expiresin")) / 1000);
     }
-    user.password = ''
-    user.salt = ''
-    return user
+    user.password = "";
+    user.salt = "";
+    return user;
   }
 
   async findOneByAccount(username: string): Promise<UserEntity> {
-    return await this.userRepo.findOne({ where: { username } })
+    return await this.userRepo.findOne({ where: { username } });
   }
 
   /** 创建用户 */
   async create(dto: CreateUserDto): Promise<ResultData> {
     if (dto.password !== dto.confirmPassword)
-      return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, '两次输入密码不一致，请重试')
+      return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, "两次输入密码不一致，请重试");
     // 防止重复创建 start
     if (await this.findOneByAccount(dto.username))
-      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '帐号已存在，请调整后重新注册！')
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "帐号已存在，请调整后重新注册！");
     if (await this.userRepo.findOne({ where: { phone: dto.phone } }))
-      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '当前手机号已存在，请调整后重新注册')
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "当前手机号已存在，请调整后重新注册");
     if (await this.userRepo.findOne({ where: { email: dto.email } }))
-      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, '当前邮箱已存在，请调整后重新注册')
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "当前邮箱已存在，请调整后重新注册");
     // 防止重复创建 end
-    const salt = await genSalt()
-    dto.password = await hash(dto.password, salt)
+    const salt = await genSalt();
+    dto.password = await hash(dto.password, salt);
     // plainToInstance  忽略转换 @Exclude 装饰器
-    const user = plainToInstance(UserEntity, { salt, ...dto }, { ignoreDecorators: true })
-    const result = await this.userManager.transaction(async (transactionalEntityManager) => {
-      return await transactionalEntityManager.save<UserEntity>(user)
-    })
-    return ResultData.ok(instanceToPlain(result))
+    const user = plainToInstance(UserEntity, { salt, ...dto }, { ignoreDecorators: true });
+    const result = await this.userManager.transaction(async transactionalEntityManager => {
+      return await transactionalEntityManager.save<UserEntity>(user);
+    });
+    return ResultData.ok(instanceToPlain(result));
   }
 
   /**
@@ -94,176 +90,171 @@ export class UserService {
    * account 有可能是 帐号/手机/邮箱
    */
   async login(account: string, password: string): Promise<ResultData> {
-    let user = null
+    let user = null;
     if (validPhone(account)) {
       // 手机登录
-      user = await this.userRepo.findOne({ where: { phone: account } })
+      user = await this.userRepo.findOne({ where: { phone: account } });
     } else if (validEmail(account)) {
       // 邮箱
-      user = await this.userRepo.findOne({ where: { email: account } })
+      user = await this.userRepo.findOne({ where: { email: account } });
     } else {
       // 帐号
-      user = await this.findOneByAccount(account)
+      user = await this.findOneByAccount(account);
     }
-    if (!user) return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, '帐号或密码错误')
-    const checkPassword = await compare(password, user.password)
-    if (!checkPassword) return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, '帐号或密码错误')
-    if (user.status === 0)
-      return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, '您已被禁用，如需正常使用请联系管理员')
+    if (!user) return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, "帐号或密码错误");
+    const checkPassword = await compare(password, user.password);
+    if (!checkPassword) return ResultData.fail(AppHttpCode.USER_PASSWORD_INVALID, "帐号或密码错误");
+    if (user.status === 0) return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, "您已被禁用，如需正常使用请联系管理员");
     // 生成 token
-    const data = this.genToken({ id: user.id })
-    return ResultData.ok(data)
+    const data = this.genToken({ id: user.id });
+    return ResultData.ok(data);
   }
 
   async updateToken(userId: string): Promise<ResultData> {
-    const data = this.genToken({ id: userId })
-    return ResultData.ok(data)
+    const data = this.genToken({ id: userId });
+    return ResultData.ok(data);
   }
 
   /**
    * 批量导入用户
    */
   async importUsers(file: Express.Multer.File): Promise<ResultData> {
-    const acceptFileType = 'application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    const acceptFileType = "application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     if (!acceptFileType.indexOf(file.mimetype))
-      return ResultData.fail(AppHttpCode.FILE_TYPE_ERROR, '文件类型错误，请上传 .xls 或 .xlsx 文件')
-    if (file.size > 5 * 1024 * 1024)
-      return ResultData.fail(AppHttpCode.FILE_SIZE_EXCEED_LIMIT, '文件大小超过，最大支持 5M')
-    const workSheet = xlsx.parse(file.buffer)
+      return ResultData.fail(AppHttpCode.FILE_TYPE_ERROR, "文件类型错误，请上传 .xls 或 .xlsx 文件");
+    if (file.size > 5 * 1024 * 1024) return ResultData.fail(AppHttpCode.FILE_SIZE_EXCEED_LIMIT, "文件大小超过，最大支持 5M");
+    const workSheet = xlsx.parse(file.buffer);
     // 需要处理 excel 内帐号 手机号 邮箱 是否有重复的情况
-    if (workSheet[0].data.length === 0) return ResultData.fail(AppHttpCode.DATA_IS_EMPTY, 'excel 导入数据为空')
-    const userArr = []
-    const accountMap = new Map()
-    const phoneMap = new Map()
-    const emailMap = new Map()
+    if (workSheet[0].data.length === 0) return ResultData.fail(AppHttpCode.DATA_IS_EMPTY, "excel 导入数据为空");
+    const userArr = [];
+    const accountMap = new Map();
+    const phoneMap = new Map();
+    const emailMap = new Map();
     // 从 1 开始是去掉 excel 帐号等文字提示
     for (let i = 1, len = workSheet[0].data.length; i < len; i++) {
-      const dataArr = workSheet[0].data[i] as Array<any>
-      if (dataArr.length === 0) break
-      const [username, phone, email, avatar] = dataArr
-      userArr.push({ username, phone, email, avatar })
+      const dataArr = workSheet[0].data[i] as Array<any>;
+      if (dataArr.length === 0) break;
+      const [username, phone, email, avatar] = dataArr;
+      userArr.push({ username, phone, email, avatar });
       if (username && !accountMap.has(username)) {
-        accountMap.set(username, [])
+        accountMap.set(username, []);
       } else if (username) {
         // 有重复的
-        accountMap.get(username).push(i + 1)
+        accountMap.get(username).push(i + 1);
       } else {
-        return ResultData.fail(AppHttpCode.DATA_IS_EMPTY, '上传文件帐号有空数据，请检查后再导入')
+        return ResultData.fail(AppHttpCode.DATA_IS_EMPTY, "上传文件帐号有空数据，请检查后再导入");
       }
       if (!phoneMap.has(phone)) {
-        phoneMap.set(phone, [])
+        phoneMap.set(phone, []);
       } else if (phone) {
-        phoneMap.get(phone).push(i + 1)
+        phoneMap.get(phone).push(i + 1);
       }
       if (email && !emailMap.has(email)) {
-        emailMap.set(email, [])
+        emailMap.set(email, []);
       } else if (email) {
-        emailMap.get(email).push(i + 1)
+        emailMap.get(email).push(i + 1);
       }
     }
-    const accountErrArr = []
+    const accountErrArr = [];
     for (let [key, val] of accountMap) {
       if (val.length > 0) {
-        accountErrArr.push({ key, val })
+        accountErrArr.push({ key, val });
       }
     }
-    const phoneErrArr = []
+    const phoneErrArr = [];
     for (let [key, val] of phoneMap) {
       if (val.length > 0) {
-        phoneErrArr.push({ key, val })
+        phoneErrArr.push({ key, val });
       }
     }
-    const emailErrArr = []
+    const emailErrArr = [];
     for (let [key, val] of emailMap) {
       if (val.length > 0) {
-        emailErrArr.push({ key, val })
+        emailErrArr.push({ key, val });
       }
     }
     if (accountErrArr.length > 0 || phoneErrArr.length > 0 || emailErrArr.length > 0) {
-      return ResultData.fail(AppHttpCode.PARAM_INVALID, '导入 excel 内部有数据重复或数据有误，请修改调整后上传导入', {
+      return ResultData.fail(AppHttpCode.PARAM_INVALID, "导入 excel 内部有数据重复或数据有误，请修改调整后上传导入", {
         username: accountErrArr,
         phone: phoneErrArr,
-        email: emailErrArr,
-      })
+        email: emailErrArr
+      });
     }
     // 若 excel 内部无重复，则需要判断 excel 中数据 是否与 数据库的数据重复
     const existingAccount = await this.userRepo.find({
-      select: ['username'],
-      where: { username: In(userArr.map((v) => v.username)) },
-    })
+      select: ["username"],
+      where: { username: In(userArr.map(v => v.username)) }
+    });
     if (existingAccount.length > 0) {
-      existingAccount.forEach((v) => {
+      existingAccount.forEach(v => {
         // userArr 中的数据 下标 换算成 excel 中的 行号 + 2
-        accountErrArr.push({ key: v.username, val: [userArr.findIndex((m) => m.username === v.username) + 2] })
-      })
+        accountErrArr.push({ key: v.username, val: [userArr.findIndex(m => m.username === v.username) + 2] });
+      });
     }
     // 手机号、邮箱非必填，所以查询存在重复的 过滤掉 空数据
     const existingPhone = await this.userRepo.find({
-      select: ['phone'],
-      where: { username: In(userArr.map((v) => v.phone).filter((v) => !!v)) },
-    })
+      select: ["phone"],
+      where: { username: In(userArr.map(v => v.phone).filter(v => !!v)) }
+    });
     if (existingPhone.length > 0) {
-      existingPhone.forEach((v) => {
+      existingPhone.forEach(v => {
         // userArr 中的数据 下标 换算成 excel 中的 行号 + 2
-        phoneErrArr.push({ key: v.phone, val: [userArr.findIndex((m) => m.phone === v.phone) + 2] })
-      })
+        phoneErrArr.push({ key: v.phone, val: [userArr.findIndex(m => m.phone === v.phone) + 2] });
+      });
     }
     const existingEmail = await this.userRepo.find({
-      select: ['email'],
-      where: { username: In(userArr.map((v) => v.email).filter((v) => !!v)) },
-    })
+      select: ["email"],
+      where: { username: In(userArr.map(v => v.email).filter(v => !!v)) }
+    });
     if (existingEmail.length > 0) {
-      existingEmail.forEach((v) => {
+      existingEmail.forEach(v => {
         // userArr 中的数据 下标 换算成 excel 中的 行号 + 2
-        emailErrArr.push({ key: v.email, val: [userArr.findIndex((m) => m.email === v.email) + 2] })
-      })
+        emailErrArr.push({ key: v.email, val: [userArr.findIndex(m => m.email === v.email) + 2] });
+      });
     }
     if (accountErrArr.length > 0 || phoneErrArr.length > 0 || emailErrArr.length > 0) {
-      return ResultData.fail(AppHttpCode.PARAM_INVALID, '导入 excel 系统中已有重复项，请修改调整后上传导入', {
+      return ResultData.fail(AppHttpCode.PARAM_INVALID, "导入 excel 系统中已有重复项，请修改调整后上传导入", {
         username: accountErrArr,
         phone: phoneErrArr,
-        email: emailErrArr,
-      })
+        email: emailErrArr
+      });
     }
     // excel 与数据库无重复，准备入库
-    const password = this.config.get<string>('user.initialPassword')
-    userArr.forEach((v) => {
-      const salt = genSaltSync()
-      const encryptPw = hashSync(password, salt)
-      v['password'] = encryptPw
-      v['salt'] = salt
-    })
-    const result = await this.userManager.transaction(async (transactionalEntityManager) => {
-      return await transactionalEntityManager.save<UserEntity>(
-        plainToInstance(UserEntity, userArr, { ignoreDecorators: true }),
-      )
-    })
-    return ResultData.ok(instanceToPlain(result))
+    const password = this.config.get<string>("user.initialPassword");
+    userArr.forEach(v => {
+      const salt = genSaltSync();
+      const encryptPw = hashSync(password, salt);
+      v["password"] = encryptPw;
+      v["salt"] = salt;
+    });
+    const result = await this.userManager.transaction(async transactionalEntityManager => {
+      return await transactionalEntityManager.save<UserEntity>(plainToInstance(UserEntity, userArr, { ignoreDecorators: true }));
+    });
+    return ResultData.ok(instanceToPlain(result));
   }
 
   /** 更新用户信息 */
   async update(dto: UpdateUserDto, currUser: UserEntity): Promise<ResultData> {
-    const existing = await this.findOneById(dto.id)
-    if (!existing) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, '当前用户不存在或已删除')
-    if (existing.status === 0)
-      return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, '当前用户已被禁用，不可更新用户信息')
+    const existing = await this.findOneById(dto.id);
+    if (!existing) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, "当前用户不存在或已删除");
+    if (existing.status === 0) return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, "当前用户已被禁用，不可更新用户信息");
     if (existing.type === UserType.SUPER_ADMIN && currUser.type === UserType.ORDINARY_USER) {
-      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, '您不可修改超管信息喔')
+      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "您不可修改超管信息喔");
     }
-    const roleIds = dto.roleIds || []
-    const userInfo = instanceToPlain(dto)
-    delete userInfo.roleIds
-    const { affected } = await this.userManager.transaction(async (transactionalEntityManager) => {
+    const roleIds = dto.roleIds || [];
+    const userInfo = instanceToPlain(dto);
+    delete userInfo.roleIds;
+    const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
       if (roleIds.length > 0) {
-        await this.createOrUpdateUserRole({ userId: dto.id, roleIds })
+        await this.createOrUpdateUserRole({ userId: dto.id, roleIds });
       }
-      return await transactionalEntityManager.update<UserEntity>(UserEntity, dto.id, userInfo)
-    })
-    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, '更新失败，请稍后重试')
+      return await transactionalEntityManager.update<UserEntity>(UserEntity, dto.id, userInfo);
+    });
+    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, "更新失败，请稍后重试");
 
-    await this.redisService.del(getRedisKey(RedisKeyPrefix.USER_INFO, dto.id))
+    await this.redisService.del(getRedisKey(RedisKeyPrefix.USER_INFO, dto.id));
     // redis 更新用户信息
-    return ResultData.ok()
+    return ResultData.ok();
   }
 
   /**
@@ -273,17 +264,16 @@ export class UserService {
    * @returns
    */
   async updateStatus(userId: string, status: 0 | 1, currUserId: string): Promise<ResultData> {
-    if (userId === currUserId) return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, '当前登录用户状态不可更改')
-    const existing = await this.findOneById(userId)
-    if (!existing) ResultData.fail(AppHttpCode.USER_NOT_FOUND, '当前用户不存在或已删除')
-    if (existing.type === UserType.SUPER_ADMIN)
-      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, '您不可修改超管信息喔')
-    const { affected } = await this.userManager.transaction(async (transactionalEntityManager) => {
-      return await transactionalEntityManager.update<UserEntity>(UserEntity, userId, { id: userId, status })
-    })
-    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, '更新失败，请稍后尝试')
-    await this.redisService.hmset(getRedisKey(RedisKeyPrefix.USER_INFO, userId), { status })
-    return ResultData.ok()
+    if (userId === currUserId) return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "当前登录用户状态不可更改");
+    const existing = await this.findOneById(userId);
+    if (!existing) ResultData.fail(AppHttpCode.USER_NOT_FOUND, "当前用户不存在或已删除");
+    if (existing.type === UserType.SUPER_ADMIN) return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "您不可修改超管信息喔");
+    const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
+      return await transactionalEntityManager.update<UserEntity>(UserEntity, userId, { id: userId, status });
+    });
+    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, "更新失败，请稍后尝试");
+    await this.redisService.hmset(getRedisKey(RedisKeyPrefix.USER_INFO, userId), { status });
+    return ResultData.ok();
   }
 
   /**
@@ -291,70 +281,68 @@ export class UserService {
    * @reset 是否重置, false 则使用传入的 password 更新
    */
   async updatePassword(userId: string, password: string, reset: boolean, currUser: UserEntity): Promise<ResultData> {
-    const existing = await this.userRepo.findOne({ where: { id: userId } })
-    if (!existing)
-      return ResultData.fail(AppHttpCode.USER_NOT_FOUND, `用户不存在或已删除，${reset ? '重置' : '更新'}失败`)
-    if (existing.status === 0)
-      return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, '当前用户已被禁用，不可重置用户密码')
+    const existing = await this.userRepo.findOne({ where: { id: userId } });
+    if (!existing) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, `用户不存在或已删除，${reset ? "重置" : "更新"}失败`);
+    if (existing.status === 0) return ResultData.fail(AppHttpCode.USER_ACCOUNT_FORBIDDEN, "当前用户已被禁用，不可重置用户密码");
     if (existing.type === UserType.SUPER_ADMIN && currUser.type === UserType.ORDINARY_USER) {
-      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, '您不可修改超管信息喔')
+      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "您不可修改超管信息喔");
     }
-    const newPassword = reset ? this.config.get<string>('user.initialPassword') : password
-    const user = { id: userId, password: await hash(newPassword, existing.salt) }
-    const { affected } = await this.userManager.transaction(async (transactionalEntityManager) => {
-      return await transactionalEntityManager.update<UserEntity>(UserEntity, userId, user)
-    })
-    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, `${reset ? '重置' : '更新'}失败，请稍后重试`)
-    return ResultData.ok()
+    const newPassword = reset ? this.config.get<string>("user.initialPassword") : password;
+    const user = { id: userId, password: await hash(newPassword, existing.salt) };
+    const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
+      return await transactionalEntityManager.update<UserEntity>(UserEntity, userId, user);
+    });
+    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, `${reset ? "重置" : "更新"}失败，请稍后重试`);
+    return ResultData.ok();
   }
 
   /** 创建 or 更新用户-角色 */
   async createOrUpdateUserRole(dto: CreateOrUpdateUserRolesDto): Promise<ResultData> {
     const userRoleList = plainToInstance(
       UserRoleEntity,
-      dto.roleIds.map((roleId) => {
-        return { roleId, userId: dto.userId }
-      }),
-    )
-    const res = await this.userManager.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.delete(UserRoleEntity, { userId: dto.userId })
-      const result = await transactionalEntityManager.save<UserRoleEntity>(userRoleList)
-      return result
-    })
-    if (!res) return ResultData.fail(AppHttpCode.SERVICE_ERROR, '用户更新角色失败')
-    await this.redisService.set(getRedisKey(RedisKeyPrefix.USER_ROLE, dto.userId), JSON.stringify(dto.roleIds))
+      dto.roleIds.map(roleId => {
+        return { roleId, userId: dto.userId };
+      })
+    );
+    const res = await this.userManager.transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.delete(UserRoleEntity, { userId: dto.userId });
+      const result = await transactionalEntityManager.save<UserRoleEntity>(userRoleList);
+      return result;
+    });
+    if (!res) return ResultData.fail(AppHttpCode.SERVICE_ERROR, "用户更新角色失败");
+    await this.redisService.set(getRedisKey(RedisKeyPrefix.USER_ROLE, dto.userId), JSON.stringify(dto.roleIds));
     await this.redisService.del([
       getRedisKey(RedisKeyPrefix.USER_MENU, dto.userId),
-      getRedisKey(RedisKeyPrefix.USER_PERM, dto.userId),
-    ])
-    return ResultData.ok()
+      getRedisKey(RedisKeyPrefix.USER_PERM, dto.userId)
+    ]);
+    return ResultData.ok();
   }
 
   /** 查询用户列表, 需要重新写， 包含查询 角色、部门等 */
   async findList(dto: FindUserListDto): Promise<ResultData> {
-    const { page, size, username, status, roleId, hasCurrRole = 0, deptId, hasCurrDept = 0 } = dto
+    const { page, size, username, status, roleId, hasCurrRole = 0, deptId, hasCurrDept = 0 } = dto;
     if (roleId) {
-      const result = await this.userRoleService.findUserByRoleId(roleId, page, size, !!Number(hasCurrRole))
-      return result
+      const result = await this.userRoleService.findUserByRoleId(roleId, page, size, !!Number(hasCurrRole));
+      return result;
     }
     const where = {
       ...(status ? { status } : null),
-      ...(username ? { username: Like(`%${username}%`) } : null),
-    }
+      ...(username ? { username: Like(`%${username}%`) } : null)
+    };
     const users = await this.userRepo.findAndCount({
       where,
-      order: { id: 'DESC' },
+      order: { id: "DESC" },
       skip: size * (page - 1),
-      take: size,
-    })
-    return ResultData.ok({ list: instanceToPlain(users[0]), total: users[1] })
+      take: size
+    });
+    return ResultData.ok({ list: instanceToPlain(users[0]), total: users[1] });
   }
 
   /** 查询单个用户 */
   async findOne(id: string): Promise<ResultData> {
-    const user = await this.findOneById(id)
-    if (!user) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, '该用户不存在或已删除')
-    return ResultData.ok(instanceToPlain(user))
+    const user = await this.findOneById(id);
+    if (!user) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, "该用户不存在或已删除");
+    return ResultData.ok(instanceToPlain(user));
   }
 
   /**
@@ -363,26 +351,26 @@ export class UserService {
    * @returns
    */
   genToken(payload: { id: string }): CreateTokenDto {
-    const accessToken = `Bearer ${this.jwtService.sign(payload)}`
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: this.config.get('jwt.refreshExpiresIn') })
-    return { accessToken, refreshToken }
+    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: this.config.get("jwt.refreshExpiresIn") });
+    return { accessToken, refreshToken };
   }
 
   /**
    * 生成刷新 token
    */
   refreshToken(id: string): string {
-    return this.jwtService.sign({ id })
+    return this.jwtService.sign({ id });
   }
 
   /** 校验 token */
   verifyToken(token: string): string {
     try {
-      if (!token) return null
-      const id = this.jwtService.verify(token.replace('Bearer ', ''))
-      return id
+      if (!token) return null;
+      const id = this.jwtService.verify(token.replace("Bearer ", ""));
+      return id;
     } catch (error) {
-      return null
+      return null;
     }
   }
 }

@@ -351,9 +351,7 @@ export class UserService {
    * @returns
    */
   genToken(payload: { id: string }): CreateTokenDto {
-    const accessToken = `Bearer ${this.jwtService.sign(payload, {
-      expiresIn: "10s"
-    })}`;
+    const accessToken = `Bearer ${this.jwtService.sign(payload)}`;
     const refreshToken = this.jwtService.sign(
       {
         ...payload,

@@ -35,7 +35,7 @@ redis:
   host: 'redis'
   port: 6378
   db: 0
-  keyPrefix: 'nest:'
+  keyPrefix: 'nest-rbac:'
 
 # jwt 配置
 jwt:

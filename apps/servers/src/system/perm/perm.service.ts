@@ -102,12 +102,12 @@ export class PermService {
    */
   async findUserMenus(userId: string, userType: UserType): Promise<MenuEntity[]> {
     const redisKey = getRedisKey(RedisKeyPrefix.USER_MENU, userId);
-    const result = await this.redisService.get(redisKey);
-    if (result) return JSON.parse(result);
     let menusResult;
     if (userType === UserType.SUPER_ADMIN) {
       menusResult = await this.dataSource.createQueryBuilder().select().from("sys_menu", "m").getRawMany();
     } else {
+      const result = await this.redisService.get(redisKey);
+      if (result) return JSON.parse(result);
       menusResult = await this.dataSource
         .createQueryBuilder()
         .select(["m.id", "m.parent_id", "m.name", "m.type", "m.code", "m.path", "m.order_num"])

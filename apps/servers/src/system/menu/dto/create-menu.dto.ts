@@ -26,6 +26,14 @@ export class CreateMenuDto {
   @IsIn($enum(MenuType).getValues(), { message: "type 的值只能是 1/2/3，且分别表示菜单/tabs/按钮" })
   readonly type: MenuType;
 
+  @ApiProperty({ description: "菜单图标" })
+  @IsString({ message: "icon 类型错误，正确类型 string" })
+  readonly icon?: string;
+
+  @ApiProperty({ description: "跳转路径" })
+  @IsString({ message: "菜单路径 类型错误，正确类型 string" })
+  readonly path?: string;
+
   @ApiProperty({ description: "排序", required: false })
   @IsNumber({}, { message: "排序传值错误" })
   @Min(0)

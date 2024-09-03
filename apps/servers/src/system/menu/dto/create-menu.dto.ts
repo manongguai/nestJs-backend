@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsIn, IsNumber, IsString, Min, IsNotEmpty, Length, IsNumberString } from "class-validator";
+import { IsArray, IsIn, IsNumber, IsString, Min, IsNotEmpty, Length, IsNumberString, IsOptional } from "class-validator";
 import { $enum } from "ts-enum-util";
 
 import { MenuType } from "../../../common/enums/common.enum";
@@ -31,6 +31,7 @@ export class CreateMenuDto {
   readonly icon?: string;
 
   @ApiProperty({ description: "跳转路径" })
+  @IsOptional()
   @IsString({ message: "菜单路径 类型错误，正确类型 string" })
   readonly path?: string;
 

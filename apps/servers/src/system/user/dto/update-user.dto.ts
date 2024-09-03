@@ -8,7 +8,8 @@ import {
   IsPhoneNumber,
   IsString,
   IsIn,
-  IsNumberString
+  IsNumberString,
+  ValidateIf
 } from "class-validator";
 import { $enum } from "ts-enum-util";
 

@@ -13,6 +13,7 @@ import { FindUserListDto } from "./dto/find-user-list.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateOrUpdateRoleUsersDto } from "./dto/createupdate-role-users.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
+import { CreateUserByAdminDto } from "./dto/create-user.dto";
 
 @ApiTags("用户账号")
 @ApiBearerAuth()
@@ -57,6 +58,13 @@ export class UserController {
   @ApiResult()
   async update(@Body() dto: UpdateUserDto, @Req() req): Promise<ResultData> {
     return await this.userService.update(dto, req.user);
+  }
+
+  @Post()
+  @ApiOperation({ summary: "后台新增用户" })
+  @ApiResult()
+  async create(@Body() dto: CreateUserByAdminDto, @Req() req): Promise<ResultData> {
+    return await this.userService.createByAdmin(dto);
   }
 
   @Put("/status/change")

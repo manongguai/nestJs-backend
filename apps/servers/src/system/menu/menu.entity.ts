@@ -24,7 +24,7 @@ export class MenuEntity {
   public code: string;
 
   @ApiProperty({ description: "跳转路径" })
-  @Column({ type: "varchar", length: 50, comment: "菜单跳转路径，按钮可以选填" })
+  @Column({ type: "varchar", length: 50, comment: "菜单跳转路径，按钮可以选填", default: "" })
   public path?: string;
 
   @ApiProperty({ description: "菜单类型, 1-菜单 2-tabs 3-按钮" })

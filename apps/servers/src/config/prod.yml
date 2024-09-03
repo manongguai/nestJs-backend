@@ -51,3 +51,4 @@ perm:
 # 初始密码， 重置密码
 user:
   initialPassword: 'Q123456'
+  initialAvatar: 'http://localhost:8081/static/b37f8d762222ffbf280fa708b4b57f4a.jpg'

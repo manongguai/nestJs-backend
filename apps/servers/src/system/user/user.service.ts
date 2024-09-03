@@ -24,7 +24,7 @@ import { UserRoleService } from "./role/user-role.service";
 import { UserEntity } from "./user.entity";
 import { UserRoleEntity } from "./role/user-role.entity";
 
-import { CreateUserDto } from "./dto/create-user.dto";
+import { CreateUserByAdminDto, CreateUserDto } from "./dto/create-user.dto";
 import { FindUserListDto } from "./dto/find-user-list.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateOrUpdateUserRolesDto } from "./dto/create-user-roles.dto";
@@ -79,6 +79,7 @@ export class UserService {
     dto.password = await hash(dto.password, salt);
     // plainToInstance  忽略转换 @Exclude 装饰器
     const user = plainToInstance(UserEntity, { salt, ...dto }, { ignoreDecorators: true });
+    user.avatar = user.avatar || this.config.get<string>("user.initialAvatar");
     const result = await this.userManager.transaction(async transactionalEntityManager => {
       return await transactionalEntityManager.save<UserEntity>(user);
     });
@@ -224,11 +225,39 @@ export class UserService {
     userArr.forEach(v => {
       const salt = genSaltSync();
       const encryptPw = hashSync(password, salt);
+      v["avatar"] = v["avatar"] || this.config.get<string>("user.initialAvatar");
       v["password"] = encryptPw;
       v["salt"] = salt;
     });
     const result = await this.userManager.transaction(async transactionalEntityManager => {
       return await transactionalEntityManager.save<UserEntity>(plainToInstance(UserEntity, userArr, { ignoreDecorators: true }));
+    });
+    return ResultData.ok(instanceToPlain(result));
+  }
+
+  async createByAdmin(dto: CreateUserByAdminDto): Promise<ResultData> {
+    // 防止重复创建 start
+    if (await this.findOneByAccount(dto.username))
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "帐号已存在，请调整后重新注册！");
+    if (await this.userRepo.findOne({ where: { phone: dto.phone } }))
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "当前手机号已存在，请调整后重新注册");
+    if (await this.userRepo.findOne({ where: { email: dto.email } }))
+      return ResultData.fail(AppHttpCode.USER_CREATE_EXISTING, "当前邮箱已存在，请调整后重新注册");
+    // 防止重复创建 end
+    const password = dto.password || this.config.get<string>("user.initialPassword");
+    const salt = await genSalt();
+    dto.password = await hash(password, salt);
+    // plainToInstance  忽略转换 @Exclude 装饰器
+    const user = plainToInstance(UserEntity, { salt, ...dto }, { ignoreDecorators: true });
+    user.avatar = user.avatar || this.config.get<string>("user.initialAvatar");
+    const roleIds = dto.roleIds || [];
+    delete dto.roleIds;
+    const result = await this.userManager.transaction(async transactionalEntityManager => {
+      const result = await transactionalEntityManager.save<UserEntity>(user);
+      if (roleIds && roleIds.length > 0) {
+        await this.createOrUpdateUserRole({ userId: result.id, roleIds });
+      }
+      return result;
     });
     return ResultData.ok(instanceToPlain(result));
   }
@@ -244,6 +273,7 @@ export class UserService {
     const roleIds = dto.roleIds || [];
     const userInfo = instanceToPlain(dto);
     delete userInfo.roleIds;
+    userInfo.avatar = dto.avatar || this.config.get<string>("user.initialAvatar");
     const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
       if (roleIds.length > 0) {
         await this.createOrUpdateUserRole({ userId: dto.id, roleIds });

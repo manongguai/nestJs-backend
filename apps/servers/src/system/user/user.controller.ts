@@ -1,4 +1,17 @@
-import { Controller, Query, Get, Param, Put, Body, Post, UseInterceptors, UploadedFile, HttpCode, Req } from "@nestjs/common";
+import {
+  Controller,
+  Query,
+  Get,
+  Param,
+  Put,
+  Body,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  HttpCode,
+  Req,
+  Delete
+} from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBody, ApiConsumes, ApiQuery, ApiBearerAuth } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 
@@ -65,6 +78,13 @@ export class UserController {
   @ApiResult()
   async create(@Body() dto: CreateUserByAdminDto, @Req() req): Promise<ResultData> {
     return await this.userService.createByAdmin(dto);
+  }
+
+  @Delete(":id")
+  @ApiOperation({ summary: "后台删除用户" })
+  @ApiResult()
+  async del(@Param("id") id: string, @Req() req): Promise<ResultData> {
+    return await this.userService.softDeleteUser(id, req.user);
   }
 
   @Put("/status/change")

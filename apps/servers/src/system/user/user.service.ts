@@ -287,6 +287,23 @@ export class UserService {
     return ResultData.ok();
   }
 
+  // 软删除用户
+  async softDeleteUser(id: string, currUser: UserEntity): Promise<ResultData> {
+    const existing = await this.findOneById(id);
+    if (!existing) return ResultData.fail(AppHttpCode.USER_NOT_FOUND, "当前用户不存在或已删除");
+    if (existing.type === UserType.SUPER_ADMIN && currUser.type === UserType.ORDINARY_USER) {
+      return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "您不可修改超管信息喔");
+    }
+
+    const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.softDelete(UserEntity, id);
+      // 删除关联的角色
+      return await transactionalEntityManager.delete(UserRoleEntity, { userId: id });
+    });
+    if (!affected) ResultData.fail(AppHttpCode.SERVICE_ERROR, "删除失败，请稍后重试");
+
+    return ResultData.ok();
+  }
   /**
    * 启用 / 禁用 用户
    * @param userId

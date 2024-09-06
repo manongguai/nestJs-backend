@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ApiProperty } from "@nestjs/swagger";
 import { Exclude } from "class-transformer";
 import { $enum } from "ts-enum-util";
@@ -50,4 +50,7 @@ export class UserEntity {
   @ApiProperty({ type: Date, description: "更新时间" })
   @UpdateDateColumn({ type: "timestamp", name: "update_date", comment: "更新时间" })
   updateDate: Date;
+
+  @DeleteDateColumn({ name: "deleted_at", type: "timestamp", nullable: true, comment: "删除时间" })
+  public deletedAt?: Date;
 }

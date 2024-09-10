@@ -16,6 +16,7 @@ import { UpdateRoleDto } from "./dto/update-role.dto";
 import { UserEntity } from "../user/user.entity";
 import { PermService } from "../perm/perm.service";
 import { FindRoleListDto } from "./dto/find-role-list.dto";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class RoleService {
@@ -29,7 +30,8 @@ export class RoleService {
     @InjectEntityManager()
     private readonly roleManager: EntityManager,
     private readonly dataSource: DataSource,
-    private readonly permService: PermService
+    private readonly permService: PermService,
+    private readonly config: ConfigService
   ) {}
 
   async create(dto: CreateRoleDto, user: UserEntity): Promise<ResultData> {
@@ -86,7 +88,7 @@ export class RoleService {
     });
     if (!affected) return ResultData.fail(AppHttpCode.SERVICE_ERROR, "当前角色更新失败，请稍后尝试");
     // 更新角色，redis 因为角色还在，只需要更新用户菜单，用户接口权
-    await this.permService.clearUserInfoCache("nest:user:[menu|perm]*");
+    await this.permService.clearUserInfoCache(`${this.config.get<string>("redis.keyPrefix")}user:[menu|perm]*`);
     return ResultData.ok();
   }
 

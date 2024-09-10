@@ -137,7 +137,7 @@ export class PermService {
     while (_cursor != "0") {
       const [cursor, elements] = await this.redisService
         .getClient()
-        .scan(_cursor || "0", "MATCH", match || "nest:user:[menu|role|perm]*", "COUNT", this.TRAVERSE_MAX_VALUE);
+        .scan(_cursor || "0", "MATCH", match || `${this.REDIS_PREFIX}user:[menu|role|perm]*`, "COUNT", this.TRAVERSE_MAX_VALUE);
       const _elements = !this.REDIS_PREFIX ? elements : elements.map(ele => ele.replace(this.REDIS_PREFIX, ""));
       keys.push(..._elements);
       _cursor = cursor;

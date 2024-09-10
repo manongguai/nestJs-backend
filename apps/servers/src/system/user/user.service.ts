@@ -270,12 +270,12 @@ export class UserService {
     if (existing.type === UserType.SUPER_ADMIN && currUser.type === UserType.ORDINARY_USER) {
       return ResultData.fail(AppHttpCode.USER_FORBIDDEN_UPDATE, "您不可修改超管信息喔");
     }
-    const roleIds = dto.roleIds || [];
+    const roleIds = dto.roleIds;
     const userInfo = instanceToPlain(dto);
     delete userInfo.roleIds;
     userInfo.avatar = dto.avatar || this.config.get<string>("user.initialAvatar");
     const { affected } = await this.userManager.transaction(async transactionalEntityManager => {
-      if (roleIds.length > 0) {
+      if (roleIds) {
         await this.createOrUpdateUserRole({ userId: dto.id, roleIds });
       }
       return await transactionalEntityManager.update<UserEntity>(UserEntity, dto.id, userInfo);

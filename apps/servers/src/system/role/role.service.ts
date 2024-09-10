@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository, InjectEntityManager } from "@nestjs/typeorm";
-import { Repository, EntityManager, DataSource } from "typeorm";
+import { Repository, EntityManager, DataSource, Like } from "typeorm";
 import { plainToInstance } from "class-transformer";
 
 import { AppHttpCode } from "../../common/enums/code.enum";
@@ -15,6 +15,7 @@ import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { UserEntity } from "../user/user.entity";
 import { PermService } from "../perm/perm.service";
+import { FindRoleListDto } from "./dto/find-role-list.dto";
 
 @Injectable()
 export class RoleService {
@@ -125,5 +126,28 @@ export class RoleService {
         .getMany();
     }
     return ResultData.ok(roleData);
+  }
+
+  // 查询角色列表，分页
+  async findListAndCount(dto: FindRoleListDto, type: UserType, userId: string): Promise<ResultData> {
+    const { page, size, name } = dto;
+    console.log(page, size, name, dto, 11);
+    const where = {
+      ...(name ? { name: Like(`%${name}%`) } : null)
+    };
+    let roleData = [];
+    if (type === UserType.SUPER_ADMIN) {
+      roleData = await this.roleRepo.findAndCount({ order: { id: "DESC" }, skip: size * (page - 1), take: size, where });
+    } else {
+      roleData = await this.dataSource
+        .createQueryBuilder("sys_role", "sr")
+        .leftJoinAndSelect("sys_user_role", "sur", "sr.id = sur.role_id")
+        .where("sur.user_id = :userId", { userId })
+        .where(where)
+        .skip(size * (page - 1))
+        .take(size)
+        .getManyAndCount();
+    }
+    return ResultData.ok({ list: roleData[0], total: roleData[1] });
   }
 }

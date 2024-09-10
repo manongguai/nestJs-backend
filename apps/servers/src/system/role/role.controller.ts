@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Delete, Body, Req } from "@nestjs/common";
+import { Controller, Get, Post, Put, Param, Delete, Body, Req, Query } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 
 import { ResultData } from "../../common/utils/result";
@@ -8,6 +8,7 @@ import { RoleService } from "./role.service";
 import { RoleEntity } from "./role.entity";
 import { CreateRoleDto } from "./dto/create-role.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
+import { FindRoleListDto } from "./dto/find-role-list.dto";
 
 @ApiTags("角色模块")
 @ApiBearerAuth()
@@ -20,6 +21,13 @@ export class RoleController {
   @ApiResult(RoleEntity, true)
   async findList(@Req() req): Promise<ResultData> {
     return await this.roleService.findList(req.user.type, req.user.id);
+  }
+
+  @Get("listAndCount")
+  @ApiOperation({ summary: "查询 role 列表" })
+  @ApiResult(RoleEntity, true)
+  async findListAndCount(@Query() dto: FindRoleListDto, @Req() req): Promise<ResultData> {
+    return await this.roleService.findListAndCount(dto, req.user.type, req.user.id);
   }
 
   @Get("one/:id/perms")

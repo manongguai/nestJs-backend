@@ -104,7 +104,13 @@ export class PermService {
     const redisKey = getRedisKey(RedisKeyPrefix.USER_MENU, userId);
     let menusResult;
     if (userType === UserType.SUPER_ADMIN) {
-      menusResult = await this.dataSource.createQueryBuilder().select().from("sys_menu", "m").getRawMany();
+      menusResult = await this.dataSource
+        .createQueryBuilder()
+        .select()
+        .from("sys_menu", "m")
+        .orderBy("m.order_num", "ASC")
+        .addOrderBy("m.id", "ASC")
+        .getRawMany();
     } else {
       const result = await this.redisService.get(redisKey);
       if (result) return JSON.parse(result);
@@ -116,7 +122,7 @@ export class PermService {
         .leftJoin("sys_menu", "m", "rm.menu_id = m.id")
         .where("ur.user_id = :userId", { userId })
         .groupBy("m.id")
-        .orderBy("m.order_num", "DESC")
+        .orderBy("m.order_num", "ASC")
         .addOrderBy("m.id", "ASC")
         .getRawMany();
     }

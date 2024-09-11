@@ -65,7 +65,7 @@ export class PostService {
     };
     const posts = await this.postRepo.findAndCount({
       where,
-      order: { orderNum: "DESC", id: "DESC", createDate: "DESC" },
+      order: { orderNum: "ASC", id: "DESC", createDate: "DESC" },
       skip: size * (page - 1),
       take: size
     });

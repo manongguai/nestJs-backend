@@ -50,12 +50,12 @@ export class MenuService {
 
   async findAllMenu(hasBtn: boolean): Promise<ResultData> {
     const where = { ...(!hasBtn ? { type: In([1, 2]) } : null) };
-    const menuList = await this.menuRepo.find({ where, order: { orderNum: "DESC", id: "ASC" } });
+    const menuList = await this.menuRepo.find({ where, order: { orderNum: "ASC", id: "ASC" } });
     return ResultData.ok(menuList);
   }
 
   async findBtnByParentId(parentId: string): Promise<ResultData> {
-    const btnList = await this.menuRepo.find({ where: { parentId }, order: { orderNum: "DESC", id: "DESC" } });
+    const btnList = await this.menuRepo.find({ where: { parentId }, order: { orderNum: "ASC", id: "DESC" } });
     return ResultData.ok(btnList);
   }
 

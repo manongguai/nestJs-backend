@@ -1,5 +1,5 @@
 {
-  "name": "nestjs-rbac",
+  "name": "nestJs-backend",
   "private": false,
   "author": {
     "name": "kirk",
@@ -19,6 +19,7 @@
     "server:test": "turbo server:test",
     "server:build": "turbo server:build",
     "server:start": "turbo server:start",
+    "pm2:start": "sh start.sh",
     "docker:start": "docker-compose up -d",
     "docker:stop": "docker-compose stop",
     "docker:delete": "docker-compose down",

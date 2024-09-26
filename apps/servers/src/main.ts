@@ -84,7 +84,7 @@ async function bootstrap() {
   app.useGlobalFilters(new ExceptionsFilter());
   app.useGlobalFilters(new HttpExceptionsFilter());
   // 获取配置端口
-  const port = config.get<number>("app.port") || 8080;
+  const port = config.get<number>("app.port") || 8081;
   await app.listen(port);
 
   const fileUploadLocationConfig = config.get<string>("app.file.location") || "./upload";

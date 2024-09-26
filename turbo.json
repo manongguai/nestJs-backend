@@ -15,7 +15,7 @@
       "outputs": ["dist/**"]
     },
     "@kirkw/server#start:prod": {
-      "dependsOn": ["@kirkw/server#build"],
+      "dependsOn": [],
       "outputs": ["dist/**"]
     },
     "@kirkw/server#build": {

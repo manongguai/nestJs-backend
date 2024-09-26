@@ -25,7 +25,8 @@ jobs:
         port: ${{ secrets.PORT }} # 在GitHub Secrets中配置的SSH端口，默认22
         script: |
           cd /www/wwwroot/nestJs-backend   
-          git pull origin main      
+          git pull origin main 
+          npm i pnpm pm2 -g          
           pnpm install                
           pnpm run server:build             
           pnpm run pm2:start 
